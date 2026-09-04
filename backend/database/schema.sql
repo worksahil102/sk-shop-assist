@@ -42,4 +42,18 @@ CREATE TABLE td_product_categories(
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_product_categories_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id),
     CONSTRAINT uq_product_category_shop_name UNIQUE (shop_id, name)
-)
+);
+
+CREATE TABLE td_products (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    shop_id BIGINT NOT NULL,
+    category_id BIGINT NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    brand VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_products_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id),
+    CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES td_product_categories(id)
+);

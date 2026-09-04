@@ -23,14 +23,14 @@ router.get("/", authMiddleware, roleMiddleWare(2, 3), getCategoriesController);
 router.put(
   "/update/:categoryId",
   authMiddleware,
-  roleMiddleWare(2, 3),
+  roleMiddleWare(2),
   updateCategoryController,
 );
 
 router.patch(
   "/:categoryId/toggle-status",
   authMiddleware,
-  roleMiddleWare(2, 3),
+  roleMiddleWare(2),
   toggleCategoryStatusController,
 );
 
