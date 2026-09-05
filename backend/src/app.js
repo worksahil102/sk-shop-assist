@@ -3,7 +3,7 @@ const authRoutes = require("./routes/authRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const productRoutes = require("./routes/productRoutes");
 const variantRoutes = require("./routes/variantRoutes");
-
+const variantGroupRoutes = require("./routes/variantGroupRoutes");
 const app = express();
 
 app.use(express.json());
@@ -19,5 +19,6 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1", variantRoutes);
+app.use("/api/v1", variantGroupRoutes);
 
 module.exports = app;

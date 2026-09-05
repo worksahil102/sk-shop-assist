@@ -61,6 +61,7 @@ CREATE TABLE td_products (
 CREATE TABLE td_product_variants (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_id BIGINT NOT NULL,
+    variant_group_id BIGINT NOT NULL,
     sku VARCHAR(100) NOT NULL,
     size VARCHAR(50),
     color VARCHAR(50),
@@ -72,5 +73,28 @@ CREATE TABLE td_product_variants (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES td_products(id),
     CONSTRAINT uq_product_variant_sku UNIQUE (sku),
-    CONSTRAINT uq_product_variant_barcode UNIQUE (barcode)
+    CONSTRAINT uq_product_variant_barcode UNIQUE (barcode),
+    CONSTRAINT fk_product_variants_group FOREIGN KEY (variant_group_id) REFERENCES td_product_variant_groups(id) ON DELETE CASCADE;
+
+);
+
+CREATE TABLE td_product_variant_groups (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_variant_groups_product FOREIGN KEY (product_id) REFERENCES td_products(id) ON DELETE CASCADE,
+    CONSTRAINT uq_variant_group_product_name UNIQUE (product_id, name)
+);
+
+CREATE TABLE td_product_variant_images (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    variant_group_id BIGINT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT FALSE,
+    sort_order INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_variant_images_group FOREIGN KEY (variant_group_id) REFERENCES td_product_variant_groups(id) ON DELETE CASCADE
 );

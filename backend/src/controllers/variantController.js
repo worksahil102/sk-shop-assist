@@ -10,53 +10,65 @@ const {
 
 const { findProductById } = require("../models/productModel");
 
+const { findVariantGroupById } = require("../models/variantGroupModel");
+
 // CREATE VARIANT
 const createVariantController = async (req, res) => {
   try {
-    const { productId, sku, size, color, price, mrp, barcode } = req.body;
+    const { productId } = req.params;
 
-    // Validate required fields
-    if (
-      !productId ||
-      !sku ||
-      !sku.trim() ||
-      price === undefined ||
-      price === null ||
-      price === ""
-    ) {
+    const { variantGroupId, sku, size, price, mrp, barcode } = req.body;
+
+    // -----------------------------
+    // BASIC VALIDATION
+    // -----------------------------
+
+    if (!variantGroupId) {
       return res.status(400).json({
         success: false,
-        message: "Product ID, SKU and price are required",
+        message: "Variant group is required",
       });
     }
 
-    const shopId = req.user.shopId;
+    if (!sku || !sku.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU is required",
+      });
+    }
 
-    // Validate price
-    const numericPrice = Number(price);
+    if (price === undefined || price === null || price === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Price is required",
+      });
+    }
 
-    if (Number.isNaN(numericPrice) || numericPrice < 0) {
+    if (Number.isNaN(Number(price)) || Number(price) < 0) {
       return res.status(400).json({
         success: false,
         message: "Price must be a valid positive number",
       });
     }
 
-    // Validate MRP if provided
-    let numericMrp = null;
-
-    if (mrp !== undefined && mrp !== null && mrp !== "") {
-      numericMrp = Number(mrp);
-
-      if (Number.isNaN(numericMrp) || numericMrp < 0) {
-        return res.status(400).json({
-          success: false,
-          message: "MRP must be a valid positive number",
-        });
-      }
+    if (
+      mrp !== undefined &&
+      mrp !== null &&
+      mrp !== "" &&
+      (Number.isNaN(Number(mrp)) || Number(mrp) < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "MRP must be a valid positive number",
+      });
     }
 
-    // Check product belongs to logged-in shop
+    const shopId = req.user.shopId;
+
+    // -----------------------------
+    // CHECK PRODUCT
+    // -----------------------------
+
     const product = await findProductById(shopId, Number(productId));
 
     if (!product) {
@@ -66,58 +78,90 @@ const createVariantController = async (req, res) => {
       });
     }
 
-    // Do not create variant under inactive product
     if (!product.is_active) {
       return res.status(400).json({
         success: false,
-        message: "Cannot create variant under an inactive product",
+        message: "Cannot add variant to an inactive product",
       });
     }
 
-    // Check duplicate SKU
+    // -----------------------------
+    // CHECK VARIANT GROUP
+    // -----------------------------
+
+    const variantGroup = await findVariantGroupById(
+      Number(productId),
+      Number(variantGroupId),
+    );
+
+    if (!variantGroup) {
+      return res.status(404).json({
+        success: false,
+        message: "Variant group not found for this product",
+      });
+    }
+
+    if (!variantGroup.is_active) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot add variant to an inactive variant group",
+      });
+    }
+
+    // -----------------------------
+    // CHECK DUPLICATE SKU
+    // -----------------------------
+
     const existingSku = await findVariantBySku(sku.trim());
 
     if (existingSku) {
       return res.status(409).json({
         success: false,
-        message: "Variant with this SKU already exists",
+        message: "SKU already exists",
       });
     }
 
-    // Check duplicate barcode
+    // -----------------------------
+    // CHECK DUPLICATE BARCODE
+    // -----------------------------
+
     if (barcode && barcode.trim()) {
       const existingBarcode = await findVariantByBarcode(barcode.trim());
 
       if (existingBarcode) {
         return res.status(409).json({
           success: false,
-          message: "Variant with this barcode already exists",
+          message: "Barcode already exists",
         });
       }
     }
 
-    // Create variant
+    // -----------------------------
+    // CREATE VARIANT
+    // -----------------------------
+
     const variantId = await createVariant({
       productId: Number(productId),
+      variantGroupId: Number(variantGroupId),
       sku: sku.trim(),
       size: size?.trim() || null,
-      color: color?.trim() || null,
-      price: numericPrice,
-      mrp: numericMrp,
+      price: Number(price),
+      mrp: mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
       barcode: barcode?.trim() || null,
     });
 
     return res.status(201).json({
       success: true,
-      message: "Product variant created successfully",
+      message: "Variant created successfully",
       data: {
         id: variantId,
         productId: Number(productId),
+        variantGroupId: Number(variantGroupId),
         sku: sku.trim(),
         size: size?.trim() || null,
-        color: color?.trim() || null,
-        price: numericPrice,
-        mrp: numericMrp,
+        price: Number(price),
+        mrp:
+          mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
         barcode: barcode?.trim() || null,
       },
     });
@@ -126,19 +170,19 @@ const createVariantController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to create product variant",
+      message: "Failed to create variant",
     });
   }
 };
 
-// GET ALL VARIANTS OF PRODUCT
+// GET ALL VARIANTS
 const getVariantsController = async (req, res) => {
   try {
     const { productId } = req.params;
 
     const shopId = req.user.shopId;
 
-    // Check product belongs to logged-in shop
+    // Check product belongs to logged-in user's shop
     const product = await findProductById(shopId, Number(productId));
 
     if (!product) {
@@ -152,7 +196,7 @@ const getVariantsController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Product variants fetched successfully",
+      message: "Variants fetched successfully",
       data: variants,
     });
   } catch (error) {
@@ -160,7 +204,7 @@ const getVariantsController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch product variants",
+      message: "Failed to fetch variants",
     });
   }
 };
@@ -172,7 +216,7 @@ const getVariantController = async (req, res) => {
 
     const shopId = req.user.shopId;
 
-    // Check product belongs to logged-in shop
+    // Check product belongs to shop
     const product = await findProductById(shopId, Number(productId));
 
     if (!product) {
@@ -187,13 +231,13 @@ const getVariantController = async (req, res) => {
     if (!variant) {
       return res.status(404).json({
         success: false,
-        message: "Product variant not found",
+        message: "Variant not found",
       });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Product variant fetched successfully",
+      message: "Variant fetched successfully",
       data: variant,
     });
   } catch (error) {
@@ -201,7 +245,7 @@ const getVariantController = async (req, res) => {
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch product variant",
+      message: "Failed to fetch variant",
     });
   }
 };
@@ -211,24 +255,58 @@ const updateVariantController = async (req, res) => {
   try {
     const { productId, variantId } = req.params;
 
-    const { sku, size, color, price, mrp, barcode } = req.body;
+    const { variantGroupId, sku, size, price, mrp, barcode } = req.body;
+
+    // -----------------------------
+    // BASIC VALIDATION
+    // -----------------------------
+
+    if (!variantGroupId) {
+      return res.status(400).json({
+        success: false,
+        message: "Variant group is required",
+      });
+    }
+
+    if (!sku || !sku.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU is required",
+      });
+    }
+
+    if (price === undefined || price === null || price === "") {
+      return res.status(400).json({
+        success: false,
+        message: "Price is required",
+      });
+    }
+
+    if (Number.isNaN(Number(price)) || Number(price) < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a valid positive number",
+      });
+    }
 
     if (
-      !sku ||
-      !sku.trim() ||
-      price === undefined ||
-      price === null ||
-      price === ""
+      mrp !== undefined &&
+      mrp !== null &&
+      mrp !== "" &&
+      (Number.isNaN(Number(mrp)) || Number(mrp) < 0)
     ) {
       return res.status(400).json({
         success: false,
-        message: "SKU and price are required",
+        message: "MRP must be a valid positive number",
       });
     }
 
     const shopId = req.user.shopId;
 
-    // Check product belongs to logged-in shop
+    // -----------------------------
+    // CHECK PRODUCT
+    // -----------------------------
+
     const product = await findProductById(shopId, Number(productId));
 
     if (!product) {
@@ -241,11 +319,14 @@ const updateVariantController = async (req, res) => {
     if (!product.is_active) {
       return res.status(400).json({
         success: false,
-        message: "Cannot update variant under an inactive product",
+        message: "Cannot update variant of an inactive product",
       });
     }
 
-    // Check variant exists
+    // -----------------------------
+    // CHECK VARIANT
+    // -----------------------------
+
     const existingVariant = await findVariantById(
       Number(productId),
       Number(variantId),
@@ -254,66 +335,75 @@ const updateVariantController = async (req, res) => {
     if (!existingVariant) {
       return res.status(404).json({
         success: false,
-        message: "Product variant not found",
+        message: "Variant not found",
       });
     }
 
-    // Validate price
-    const numericPrice = Number(price);
+    // -----------------------------
+    // CHECK VARIANT GROUP
+    // -----------------------------
 
-    if (Number.isNaN(numericPrice) || numericPrice < 0) {
+    const variantGroup = await findVariantGroupById(
+      Number(productId),
+      Number(variantGroupId),
+    );
+
+    if (!variantGroup) {
+      return res.status(404).json({
+        success: false,
+        message: "Variant group not found for this product",
+      });
+    }
+
+    if (!variantGroup.is_active) {
       return res.status(400).json({
         success: false,
-        message: "Price must be a valid positive number",
+        message: "Cannot assign variant to an inactive variant group",
       });
     }
 
-    // Validate MRP
-    let numericMrp = null;
+    // -----------------------------
+    // CHECK DUPLICATE SKU
+    // -----------------------------
 
-    if (mrp !== undefined && mrp !== null && mrp !== "") {
-      numericMrp = Number(mrp);
-
-      if (Number.isNaN(numericMrp) || numericMrp < 0) {
-        return res.status(400).json({
-          success: false,
-          message: "MRP must be a valid positive number",
-        });
-      }
-    }
-
-    // Check duplicate SKU
     const existingSku = await findVariantBySku(sku.trim());
 
     if (existingSku && existingSku.id !== Number(variantId)) {
       return res.status(409).json({
         success: false,
-        message: "Variant with this SKU already exists",
+        message: "SKU already exists",
       });
     }
 
-    // Check duplicate barcode
+    // -----------------------------
+    // CHECK DUPLICATE BARCODE
+    // -----------------------------
+
     if (barcode && barcode.trim()) {
       const existingBarcode = await findVariantByBarcode(barcode.trim());
 
       if (existingBarcode && existingBarcode.id !== Number(variantId)) {
         return res.status(409).json({
           success: false,
-          message: "Variant with this barcode already exists",
+          message: "Barcode already exists",
         });
       }
     }
 
-    // Update variant
+    // -----------------------------
+    // UPDATE VARIANT
+    // -----------------------------
+
     const affectedRows = await updateVariant(
       Number(productId),
       Number(variantId),
       {
+        variantGroupId: Number(variantGroupId),
         sku: sku.trim(),
         size: size?.trim() || null,
-        color: color?.trim() || null,
-        price: numericPrice,
-        mrp: numericMrp,
+        price: Number(price),
+        mrp:
+          mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
         barcode: barcode?.trim() || null,
       },
     );
@@ -327,14 +417,14 @@ const updateVariantController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Product variant updated successfully",
+      message: "Variant updated successfully",
     });
   } catch (error) {
     console.error("Update variant error:", error);
 
     return res.status(500).json({
       success: false,
-      message: "Failed to update product variant",
+      message: "Failed to update variant",
     });
   }
 };
@@ -346,7 +436,7 @@ const toggleVariantStatusController = async (req, res) => {
 
     const shopId = req.user.shopId;
 
-    // Check product belongs to logged-in shop
+    // Check product belongs to shop
     const product = await findProductById(shopId, Number(productId));
 
     if (!product) {
@@ -356,13 +446,12 @@ const toggleVariantStatusController = async (req, res) => {
       });
     }
 
-    // Check variant exists
     const variant = await findVariantById(Number(productId), Number(variantId));
 
     if (!variant) {
       return res.status(404).json({
         success: false,
-        message: "Product variant not found",
+        message: "Variant not found",
       });
     }
 
@@ -380,7 +469,7 @@ const toggleVariantStatusController = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Product variant status updated successfully",
+      message: "Variant status updated successfully",
     });
   } catch (error) {
     console.error("Toggle variant status error:", error);

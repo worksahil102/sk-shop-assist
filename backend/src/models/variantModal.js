@@ -6,9 +6,9 @@ const createVariant = async (variantData) => {
     `INSERT INTO td_product_variants
       (
         product_id,
+        variant_group_id,
         sku,
         size,
-        color,
         price,
         mrp,
         barcode
@@ -16,9 +16,9 @@ const createVariant = async (variantData) => {
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       variantData.productId,
+      variantData.variantGroupId,
       variantData.sku,
       variantData.size || null,
-      variantData.color || null,
       variantData.price,
       variantData.mrp || null,
       variantData.barcode || null,
@@ -34,9 +34,9 @@ const findVariantById = async (productId, variantId) => {
     `SELECT
         id,
         product_id,
+        variant_group_id,
         sku,
         size,
-        color,
         price,
         mrp,
         barcode,
@@ -58,9 +58,9 @@ const findVariantBySku = async (sku) => {
     `SELECT
         id,
         product_id,
+        variant_group_id,
         sku,
         size,
-        color,
         price,
         mrp,
         barcode,
@@ -80,9 +80,9 @@ const findVariantByBarcode = async (barcode) => {
     `SELECT
         id,
         product_id,
+        variant_group_id,
         sku,
         size,
-        color,
         price,
         mrp,
         barcode,
@@ -100,20 +100,23 @@ const findVariantByBarcode = async (barcode) => {
 const getVariantsByProduct = async (productId) => {
   const [rows] = await pool.execute(
     `SELECT
-        id,
-        product_id,
-        sku,
-        size,
-        color,
-        price,
-        mrp,
-        barcode,
-        is_active,
-        created_at,
-        updated_at
-     FROM td_product_variants
-     WHERE product_id = ?
-     ORDER BY id DESC`,
+        v.id,
+        v.product_id,
+        v.variant_group_id,
+        vg.name AS variant_group_name,
+        v.sku,
+        v.size,
+        v.price,
+        v.mrp,
+        v.barcode,
+        v.is_active,
+        v.created_at,
+        v.updated_at
+     FROM td_product_variants v
+     INNER JOIN td_product_variant_groups vg
+        ON v.variant_group_id = vg.id
+     WHERE v.product_id = ?
+     ORDER BY v.id DESC`,
     [productId],
   );
 
@@ -125,17 +128,17 @@ const updateVariant = async (productId, variantId, variantData) => {
   const [result] = await pool.execute(
     `UPDATE td_product_variants
      SET
+        variant_group_id = ?,
         sku = ?,
         size = ?,
-        color = ?,
         price = ?,
         mrp = ?,
         barcode = ?
      WHERE id = ? AND product_id = ?`,
     [
+      variantData.variantGroupId,
       variantData.sku,
       variantData.size || null,
-      variantData.color || null,
       variantData.price,
       variantData.mrp || null,
       variantData.barcode || null,
