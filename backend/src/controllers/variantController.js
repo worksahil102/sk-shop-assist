@@ -17,7 +17,8 @@ const createVariantController = async (req, res) => {
   try {
     const { productId } = req.params;
 
-    const { variantGroupId, sku, size, price, mrp, barcode } = req.body;
+    const { variantGroupId, sku, size, price, mrp, barcode, stockQuantity } =
+      req.body;
 
     // -----------------------------
     // BASIC VALIDATION
@@ -43,7 +44,15 @@ const createVariantController = async (req, res) => {
         message: "Price is required",
       });
     }
-
+    if (
+      stockQuantity !== undefined &&
+      (!Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock quantity must be a non-negative integer",
+      });
+    }
     if (Number.isNaN(Number(price)) || Number(price) < 0) {
       return res.status(400).json({
         success: false,
@@ -148,6 +157,7 @@ const createVariantController = async (req, res) => {
       price: Number(price),
       mrp: mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
       barcode: barcode?.trim() || null,
+      stockQuantity: stockQuantity !== undefined ? Number(stockQuantity) : 0,
     });
 
     return res.status(201).json({
@@ -163,6 +173,7 @@ const createVariantController = async (req, res) => {
         mrp:
           mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
         barcode: barcode?.trim() || null,
+        stockQuantity: stockQuantity !== undefined ? Number(stockQuantity) : 0,
       },
     });
   } catch (error) {
@@ -255,7 +266,8 @@ const updateVariantController = async (req, res) => {
   try {
     const { productId, variantId } = req.params;
 
-    const { variantGroupId, sku, size, price, mrp, barcode } = req.body;
+    const { variantGroupId, sku, size, price, mrp, barcode, stockQuantity } =
+      req.body;
 
     // -----------------------------
     // BASIC VALIDATION
@@ -279,6 +291,15 @@ const updateVariantController = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Price is required",
+      });
+    }
+    if (
+      stockQuantity !== undefined &&
+      (!Number.isInteger(Number(stockQuantity)) || Number(stockQuantity) < 0)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock quantity must be a non-negative integer",
       });
     }
 
@@ -405,6 +426,7 @@ const updateVariantController = async (req, res) => {
         mrp:
           mrp !== undefined && mrp !== null && mrp !== "" ? Number(mrp) : null,
         barcode: barcode?.trim() || null,
+        stockQuantity: Number(stockQuantity),
       },
     );
 

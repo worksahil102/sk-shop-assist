@@ -11,9 +11,10 @@ const createVariant = async (variantData) => {
         size,
         price,
         mrp,
-        barcode
+        barcode,
+        stock_quantity
       )
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       variantData.productId,
       variantData.variantGroupId,
@@ -22,6 +23,7 @@ const createVariant = async (variantData) => {
       variantData.price,
       variantData.mrp || null,
       variantData.barcode || null,
+      variantData.stockQuantity || 0,
     ],
   );
 
@@ -40,6 +42,7 @@ const findVariantById = async (productId, variantId) => {
         price,
         mrp,
         barcode,
+        stock_quantity,
         is_active,
         created_at,
         updated_at
@@ -64,6 +67,7 @@ const findVariantBySku = async (sku) => {
         price,
         mrp,
         barcode,
+        stock_quantity,
         is_active
      FROM td_product_variants
      WHERE sku = ?
@@ -86,6 +90,7 @@ const findVariantByBarcode = async (barcode) => {
         price,
         mrp,
         barcode,
+        stock_quantity,
         is_active
      FROM td_product_variants
      WHERE barcode = ?
@@ -109,6 +114,7 @@ const getVariantsByProduct = async (productId) => {
         v.price,
         v.mrp,
         v.barcode,
+        v.stock_quantity,
         v.is_active,
         v.created_at,
         v.updated_at
@@ -133,7 +139,8 @@ const updateVariant = async (productId, variantId, variantData) => {
         size = ?,
         price = ?,
         mrp = ?,
-        barcode = ?
+        barcode = ? ,
+        stock_quantity = ?
      WHERE id = ? AND product_id = ?`,
     [
       variantData.variantGroupId,
