@@ -57,3 +57,20 @@ CREATE TABLE td_products (
     CONSTRAINT fk_products_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id),
     CONSTRAINT fk_products_category FOREIGN KEY (category_id) REFERENCES td_product_categories(id)
 );
+
+CREATE TABLE td_product_variants (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    sku VARCHAR(100) NOT NULL,
+    size VARCHAR(50),
+    color VARCHAR(50),
+    price DECIMAL(10, 2) NOT NULL,
+    mrp DECIMAL(10, 2),
+    barcode VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_product_variants_product FOREIGN KEY (product_id) REFERENCES td_products(id),
+    CONSTRAINT uq_product_variant_sku UNIQUE (sku),
+    CONSTRAINT uq_product_variant_barcode UNIQUE (barcode)
+);
