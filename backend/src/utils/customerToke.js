@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const generateCustomerToken = (customerData) => {
   return jwt.sign(
     {
-      customerId: customerData.is,
+      customerId: customerData.id,
       shopId: customerData.shop_id,
       type: "CUSTOMER",
     },

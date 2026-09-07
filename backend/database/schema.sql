@@ -112,3 +112,21 @@ CREATE TABLE td_customers (
     CONSTRAINT fk_customers_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id) ON DELETE CASCADE,
     CONSTRAINT uq_customer_shop_email UNIQUE (shop_id, email)
 );
+
+CREATE TABLE td_customer_addresses (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    customer_id BIGINT NOT NULL,
+    shop_id BIGINT NOT NULL,
+    address_line1 VARCHAR(255) NOT NULL,
+    address_line2 VARCHAR(255),
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100) NOT NULL,
+    pincode VARCHAR(10) NOT NULL,
+    landmark VARCHAR(150),
+    address_type ENUM('HOME', 'WORK', 'OTHER') NOT NULL DEFAULT 'HOME',
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_customer_addresses_customer FOREIGN KEY (customer_id) REFERENCES td_customers(id) ON DELETE CASCADE,
+    CONSTRAINT fk_customer_addresses_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id) ON DELETE CASCADE
+);
