@@ -98,3 +98,17 @@ CREATE TABLE td_product_variant_images (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_variant_images_group FOREIGN KEY (variant_group_id) REFERENCES td_product_variant_groups(id) ON DELETE CASCADE
 );
+
+CREATE TABLE td_customers (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    shop_id BIGINT NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    phone VARCHAR(20),
+    password VARCHAR(255) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_customers_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id) ON DELETE CASCADE,
+    CONSTRAINT uq_customer_shop_email UNIQUE (shop_id, email)
+);
