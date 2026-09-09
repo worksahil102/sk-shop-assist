@@ -130,3 +130,51 @@ CREATE TABLE td_customer_addresses (
     CONSTRAINT fk_customer_addresses_customer FOREIGN KEY (customer_id) REFERENCES td_customers(id) ON DELETE CASCADE,
     CONSTRAINT fk_customer_addresses_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id) ON DELETE CASCADE
 );
+
+CREATE TABLE td_orders (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    shop_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL,
+    address_id BIGINT NOT NULL,
+    order_number VARCHAR(50) NOT NULL,
+    subtotal DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    discount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    shipping_charges DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    payment_status ENUM(
+        'PENDING',
+        'PAID',
+        'FAILED',
+        'REFUNDED'
+    ) NOT NULL DEFAULT 'PENDING' order_status ENUM(
+        'PENDING',
+        'CONFIRMED',
+        'PROCESSING',
+        'SHIPPED',
+        'DELIVERED',
+        'CANCELLED'
+    ) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_orders_shop FOREIGN KEY (shop_id) REFERENCES td_client_shopes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_orders_customer FOREIGN KEY (customer_id) REFERENCES td_customers(id) ON DELETE CASCADE,
+    CONSTRAINT fk_orders_address FOREIGN KEY (address_id) REFERENCES td_customer_addresses(id) ON DELETE RESTRICT,
+    CONSTRAINT uq_orders_shop_order_number UNIQUE (shop_id, order_number)
+);
+
+CREATE TABLE td_order_items (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id BIGINT NOT NULL,
+    product_id BIGINT NOT NULL,
+    variant_id BIGINT NOT NULL,
+    product_name VARCHAR(255) NOT NULL,
+    variant_name VARCHAR(255),
+    sku VARCHAR(100),
+    quantity INT NOT NULL,
+    unit_price DECIMAL(12, 2) NOT NULL,
+    total_price DECIMAL(12, 2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_order_items_order FOREIGN KEY (order_id) REFERENCES td_orders(id) ON DELETE CASCADE,
+    CONSTRAINT fk_order_items_product FOREIGN KEY (product_id) REFERENCES td_products(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_order_items_variant FOREIGN KEY (variant_id) REFERENCES td_product_variants(id) ON DELETE RESTRICT
+);

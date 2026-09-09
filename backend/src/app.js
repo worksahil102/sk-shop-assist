@@ -10,6 +10,7 @@ const shopResolverMiddleware = require("./middleware/shopResolverMiddleware");
 const publicCatalogRoutes = require("./routes/publicCatalogRoutes");
 const customerRoutes = require("./routes/customerRoutes");
 const customerAddressRoutes = require("./routes/customerAddressRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 const app = express();
 
@@ -42,5 +43,6 @@ app.use("/api/v1/public", publicCatalogRoutes);
 // customer api
 app.use("/api/v1/public/customer", customerRoutes);
 app.use("/api/v1/public/customer/addresses", customerAddressRoutes);
+app.use("/api/v1/public/customer/orders", orderRoutes);
 
 module.exports = app;
